@@ -12,14 +12,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('order_items', function (Blueprint $table) {
-            $table->unsignedBigInteger('order_id');
-            $table->unsignedBigInteger('product_id');
-            $table->integer('quantity');
-            $table->string('unit');
-            $table->decimal('unit_price', 10, 2);
+            if (!Schema::hasColumn('order_items', 'order_id')) {
+                $table->unsignedBigInteger('order_id');
+                $table->foreign('order_id')->references('id')->on('orders');
+            }
 
-            $table->foreign('order_id')->references('id')->on('orders');
-            $table->foreign('product_id')->references('id')->on('products');
+            if (!Schema::hasColumn('order_items', 'product_id')) {
+                $table->unsignedBigInteger('product_id');
+                $table->foreign('product_id')->references('id')->on('products');
+            }
+
+            if (!Schema::hasColumn('order_items', 'quantity')) {
+                $table->integer('quantity');
+            }
+
+            if (!Schema::hasColumn('order_items', 'unit')) {
+                $table->string('unit');
+            }
+
+            if (!Schema::hasColumn('order_items', 'unit_price')) {
+                $table->decimal('unit_price', 10, 2);
+            }
         });
     }
 

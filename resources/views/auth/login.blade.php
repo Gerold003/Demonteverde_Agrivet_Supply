@@ -495,7 +495,7 @@
             </div>
 
             <div class="login-footer">
-                <p>&copy; 2024 Demonteverde Agrivet Supply. All rights reserved.</p>
+                <p>&copy;  Demonteverde Agrivet Supply  </p>
             </div>
         </div>
     </div>

@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\StockOut;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -98,6 +99,16 @@ class TransactionController extends Controller
                     } elseif (isset($product->stock)) {
                         $product->decrement('stock', $it['quantity']);
                     }
+
+                    // Create automatic stock-out record for inventory tracking
+                    StockOut::create([
+                        'product_id' => $it['product_id'],
+                        'quantity' => $it['quantity'],
+                        'unit' => $it['unit'],
+                        'reason' => 'sale',
+                        'inventory_staff_id' => Auth::id(), // Cashier acts as inventory staff for this transaction
+                        'notes' => "Automatic stock-out from transaction #{$transaction->id}",
+                    ]);
                 }
             }
 

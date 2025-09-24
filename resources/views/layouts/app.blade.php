@@ -299,6 +299,16 @@
                                     <i class="bi bi-boxes me-2"></i>Products
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('inventory.stock-in.*') ? 'active' : '' }}" href="{{ route('inventory.stock-in.index') }}">
+                                    <i class="bi bi-arrow-down-circle me-2"></i>Stock In
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('inventory.stock-out.*') ? 'active' : '' }}" href="{{ route('inventory.stock-out.index') }}">
+                                    <i class="bi bi-arrow-up-circle me-2"></i>Stock Out
+                                </a>
+                            </li>
                         @endif
 
                         <li class="nav-item mt-3">

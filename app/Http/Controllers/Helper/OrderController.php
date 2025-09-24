@@ -84,7 +84,14 @@ class OrderController extends Controller
             'updated_at' => now()
         ]);
 
-        return redirect()->back()->with('success', 'Order status updated successfully.');
+        $message = 'Order status updated successfully.';
+
+        // If order is marked as ready for pickup, notify cashier
+        if ($request->status === 'ready_for_pickup') {
+            $message .= ' Order is now ready for cashier processing.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function edit($id)

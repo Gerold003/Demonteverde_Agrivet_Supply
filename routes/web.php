@@ -71,7 +71,12 @@ Route::middleware(['auth', 'role:inventory'])->prefix('inventory')->group(functi
     Route::get('/dashboard', [InventoryHomeController::class, 'index'])->name('inventory.dashboard');
 
     Route::get('/products', [ProductController::class, 'index'])->name('inventory.products.index');
+    Route::get('/products/create', [ProductController::class, 'create'])->name('inventory.products.create');
+    Route::post('/products', [ProductController::class, 'store'])->name('inventory.products.store');
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('inventory.products.show');
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('inventory.products.edit');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('inventory.products.update');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('inventory.products.destroy');
 
     Route::get('/stock-in', [StockInController::class, 'index'])->name('inventory.stock-in.index');
     Route::get('/stock-in/create', [StockInController::class, 'create'])->name('inventory.stock-in.create');

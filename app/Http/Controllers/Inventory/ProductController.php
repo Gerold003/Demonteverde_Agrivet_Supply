@@ -22,7 +22,75 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::with(['stockIns', 'stockOuts'])->findOrFail($id);
-        
+
         return view('inventory.products.show', compact('product'));
+    }
+
+    public function create()
+    {
+        return view('inventory.products.create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'brand' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'price_per_kilo' => 'nullable|numeric|min:0',
+            'price_per_sack' => 'nullable|numeric|min:0',
+            'price_per_piece' => 'nullable|numeric|min:0',
+            'current_stock_kilo' => 'nullable|numeric|min:0',
+            'current_stock_sack' => 'nullable|numeric|min:0',
+            'current_stock_piece' => 'nullable|numeric|min:0',
+            'critical_level_kilo' => 'nullable|numeric|min:0',
+            'critical_level_sack' => 'nullable|numeric|min:0',
+            'critical_level_piece' => 'nullable|numeric|min:0',
+        ]);
+
+        Product::create($request->all());
+
+        return redirect()->route('inventory.products.index')
+            ->with('success', 'Product created successfully.');
+    }
+
+    public function edit($id)
+    {
+        $product = Product::findOrFail($id);
+
+        return view('inventory.products.edit', compact('product'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'brand' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'price_per_kilo' => 'nullable|numeric|min:0',
+            'price_per_sack' => 'nullable|numeric|min:0',
+            'price_per_piece' => 'nullable|numeric|min:0',
+            'current_stock_kilo' => 'nullable|numeric|min:0',
+            'current_stock_sack' => 'nullable|numeric|min:0',
+            'current_stock_piece' => 'nullable|numeric|min:0',
+            'critical_level_kilo' => 'nullable|numeric|min:0',
+            'critical_level_sack' => 'nullable|numeric|min:0',
+            'critical_level_piece' => 'nullable|numeric|min:0',
+        ]);
+
+        $product = Product::findOrFail($id);
+        $product->update($request->all());
+
+        return redirect()->route('inventory.products.index')
+            ->with('success', 'Product updated successfully.');
+    }
+
+    public function destroy($id)
+    {
+        $product = Product::findOrFail($id);
+        $product->delete();
+
+        return redirect()->route('inventory.products.index')
+            ->with('success', 'Product deleted successfully.');
     }
 }
