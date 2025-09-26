@@ -30,15 +30,12 @@ class TransactionController extends Controller
 
     public function create()
     {
-        // Orders that are already prepared by helper/takal
-        $preparedOrders = Order::where('status', 'prepared')
+        // Orders that are sent to cashier by helper/takal
+        $preparedOrders = Order::sentToCashier()
             ->with('items.product')
             ->get();
 
-        // Products for POS
-        $products = Product::all();
-
-        return view('cashier.transactions.create', compact('preparedOrders', 'products'));
+        return view('cashier.transactions.create', compact('preparedOrders'));
     }
 
     public function processOrder(Request $request, $orderId)
@@ -53,21 +50,48 @@ class TransactionController extends Controller
         $request->validate([
             'order_id' => 'nullable|exists:orders,id',
             'cash_received' => 'required|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.unit' => 'required|string',
         ]);
+
+        // If order_id provided, process the prepared order
+        if ($request->order_id) {
+            $order = Order::sentToCashier()->with('items.product')->findOrFail($request->order_id);
+
+            $totalAmount = 0;
+            $transactionItems = [];
+
+            foreach ($order->items as $item) {
+                $unitPrice = $item->product->getPriceForUnit($item->unit);
+                $itemTotal = $item->quantity * $unitPrice;
+                $totalAmount += $itemTotal;
+
+                $transactionItems[] = [
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $unitPrice,
+                    'unit' => $item->unit,
+                    'total' => $itemTotal,
+                ];
+            }
+        } else {
+            // POS mode - validate items
+            $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|numeric|min:0.01',
+                'items.*.unit_price' => 'required|numeric|min:0',
+                'items.*.unit' => 'required|string',
+            ]);
+
+            $totalAmount = 0;
+            $transactionItems = $request->items;
+            foreach ($transactionItems as &$it) {
+                $totalAmount += $it['quantity'] * $it['unit_price'];
+                $it['total'] = $it['quantity'] * $it['unit_price'];
+            }
+        }
 
         DB::beginTransaction();
         try {
-            // Calculate total
-            $totalAmount = 0;
-            foreach ($request->items as $it) {
-                $totalAmount += $it['quantity'] * $it['unit_price'];
-            }
-
             $transaction = Transaction::create([
                 'order_id' => $request->order_id ?: null,
                 'cashier_id' => Auth::id(),
@@ -77,36 +101,28 @@ class TransactionController extends Controller
                 'status' => 'completed',
             ]);
 
-            foreach ($request->items as $it) {
+            foreach ($transactionItems as $it) {
                 TransactionItem::create([
                     'transaction_id' => $transaction->id,
                     'product_id' => $it['product_id'],
                     'quantity' => $it['quantity'],
                     'unit_price' => $it['unit_price'],
                     'unit' => $it['unit'],
-                    'total' => $it['quantity'] * $it['unit_price'],
+                    'total' => $it['total'],
                 ]);
 
-                // Update product stocks (ensure those columns exist; fallback to 'stock' if not)
+                // Deduct stock
                 $product = Product::find($it['product_id']);
                 if ($product) {
-                    if ($it['unit'] === 'kilo' && isset($product->current_stock_kilo)) {
-                        $product->decrement('current_stock_kilo', $it['quantity']);
-                    } elseif ($it['unit'] === 'sack' && isset($product->current_stock_sack)) {
-                        $product->decrement('current_stock_sack', $it['quantity']);
-                    } elseif (isset($product->current_stock_piece)) {
-                        $product->decrement('current_stock_piece', $it['quantity']);
-                    } elseif (isset($product->stock)) {
-                        $product->decrement('stock', $it['quantity']);
-                    }
+                    $product->deductStock($it['quantity'], $it['unit']);
 
-                    // Create automatic stock-out record for inventory tracking
+                    // Create automatic stock-out record
                     StockOut::create([
                         'product_id' => $it['product_id'],
                         'quantity' => $it['quantity'],
                         'unit' => $it['unit'],
                         'reason' => 'sale',
-                        'inventory_staff_id' => Auth::id(), // Cashier acts as inventory staff for this transaction
+                        'inventory_staff_id' => Auth::id(),
                         'notes' => "Automatic stock-out from transaction #{$transaction->id}",
                     ]);
                 }
@@ -114,11 +130,7 @@ class TransactionController extends Controller
 
             // Mark order completed if order_id is provided
             if ($request->order_id) {
-                $order = Order::find($request->order_id);
-                if ($order) {
-                    $order->status = 'completed';
-                    $order->save();
-                }
+                $order->update(['status' => 'completed']);
             }
 
             DB::commit();

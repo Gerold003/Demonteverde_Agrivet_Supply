@@ -19,14 +19,18 @@ class HomeController extends Controller
             ->whereBetween('created_at', [$today, $endOfDay])
             ->count();
 
-        $todayItems = OrderItem::whereHas('order', function($query) {
-            $query->where('helper_id', auth()->id());
-        })
-        ->whereBetween('created_at', [$today, $endOfDay])
-        ->count();
+        // Items prepared today: items in prepared orders created today
+        $preparedOrdersToday = Order::where('helper_id', auth()->id())
+            ->where('status', 'prepared')
+            ->whereBetween('created_at', [$today, $endOfDay])
+            ->with('items')
+            ->get();
+        $todayItems = $preparedOrdersToday->sum(function($order) {
+            return $order->items->count();
+        });
 
         $pendingOrders = Order::where('helper_id', auth()->id())
-            ->whereIn('status', ['prepared', 'ready_for_pickup'])
+            ->where('status', 'pending')
             ->count();
 
         $recentOrders = Order::where('helper_id', auth()->id())
@@ -35,11 +39,23 @@ class HomeController extends Controller
             ->limit(5)
             ->get();
 
+        // All-time status counts for overview
+        $totalOrders = Order::where('helper_id', auth()->id())->count();
+        $preparedCount = Order::where('helper_id', auth()->id())->where('status', 'prepared')->count();
+        $readyCount = Order::where('helper_id', auth()->id())->where('status', 'ready_for_pickup')->count();
+        $completedCount = Order::where('helper_id', auth()->id())->where('status', 'completed')->count();
+        $cancelledCount = Order::where('helper_id', auth()->id())->where('status', 'cancelled')->count();
+
         return view('helper.dashboard', compact(
             'todayOrders',
             'todayItems',
             'pendingOrders',
-            'recentOrders'
+            'recentOrders',
+            'totalOrders',
+            'preparedCount',
+            'readyCount',
+            'completedCount',
+            'cancelledCount'
         ));
     }
 }

@@ -12,7 +12,7 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Order Items</h5>
@@ -21,91 +21,98 @@
                     <form id="orderForm" method="POST" action="{{ route('helper.orders.store') }}">
                         @csrf
 
-                        <div id="orderItems">
-                            <!-- Order items will be added here -->
-                        </div>
+                        <div id="orderItems"></div>
 
-                        <button type="button" id="addItemBtn" class="btn btn-outline-primary">
-                            <i class="fas fa-plus me-2"></i>Add Product
-                        </button>
-
-                        <div class="mt-4">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card bg-light">
-                                        <div class="card-body">
-                                            <h5 class="card-title">Order Summary</h5>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Total Items:</span>
-                                                <span id="totalItems">0</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Total Quantity:</span>
-                                                <span id="totalQuantity">0</span>
-                                            </div>
-                                            <hr>
-                                            <div class="d-flex justify-content-between">
-                                                <strong>Total Amount:</strong>
-                                                <strong id="totalAmount">₱0.00</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div id="totalItemsContainer" class="mb-3" style="display: none;">
+                            <div class="alert alert-info">
+                                Total Items: <span id="itemCount">0</span>
                             </div>
                         </div>
+
+                        <button type="button" id="addItemBtn" class="btn btn-outline-primary mb-3" data-bs-toggle="modal" data-bs-target="#productModal">
+                            <i class="fas fa-plus me-2"></i>Add Product
+                        </button>
 
                         <div class="mt-4">
                             <button type="submit" class="btn btn-success btn-lg">
                                 <i class="fas fa-save me-2"></i>Prepare Order
                             </button>
-                            <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <a href="{{ route('helper.orders.create') }}" class="btn btn-secondary btn-lg">
                                 <i class="fas fa-undo me-2"></i>Reset
-                            </button>
+                            </a>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Available Products</h5>
+<!-- Product Selection Modal -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel">
+                    <i class="fas fa-search me-2"></i>Select Product
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="modalProductSearch" class="form-control" placeholder="Search products by name or brand..." autofocus>
                 </div>
-                <div class="card-body">
-                    <div class="input-group mb-3">
-                        <input type="text" id="productSearch" class="form-control" placeholder="Search products...">
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
 
-                    <div id="productsList">
-                        @foreach($products as $product)
-                            <div class="product-item mb-2 p-2 border rounded" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1">{{ $product->name }}</h6>
-                                        <small class="text-muted">{{ $product->brand }}</small>
-                                        <div class="mt-1">
-                                            <small class="badge bg-success me-1">Kilo: ₱{{ number_format($product->price_per_kilo, 2) }}</small>
-                                            <small class="badge bg-primary me-1">Sack: ₱{{ number_format($product->price_per_sack, 2) }}</small>
-                                            <small class="badge bg-warning">Piece: ₱{{ number_format($product->price_per_piece, 2) }}</small>
-                                        </div>
+                <div id="modalProductsGrid" class="row g-3">
+                    @foreach($products as $product)
+                        @php
+                            $iconClass = 'fa-box';
+                            if (stripos($product->name, 'hog') !== false) {
+                                $iconClass = 'fa-pig-alt';
+                            } elseif (stripos($product->name, 'broiler') !== false || stripos($product->name, 'chicken') !== false) {
+                                $iconClass = 'fa-dove';
+                            } elseif (stripos($product->name, 'feed') !== false || stripos($product->name, 'pellet') !== false) {
+                                $iconClass = 'fa-seedling';
+                            }
+
+                            $stockKilo = $product->current_stock_kilo ?? 0;
+                            $stockSack = $product->current_stock_sack ?? 0;
+                            $stockPiece = $product->current_stock_piece ?? 0;
+                            $critKilo = $product->critical_level_kilo ?? 0;
+                            $critSack = $product->critical_level_sack ?? 0;
+                            $critPiece = $product->critical_level_piece ?? 0;
+                            $lowestStock = min($stockKilo, $stockSack, $stockPiece);
+                            $avgCrit = ($critKilo + $critSack + $critPiece) / 3;
+                            $stockColor = 'text-success';
+                            if ($lowestStock <= $avgCrit) {
+                                $stockColor = 'text-danger';
+                            } elseif ($lowestStock <= $avgCrit * 2) {
+                                $stockColor = 'text-warning';
+                            }
+                        @endphp
+                        <div class="col-md-6 col-lg-4 product-grid-item" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}" data-product-brand="{{ $product->brand }}">
+                            <div class="card h-100 product-card border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <i class="fas {{ $iconClass }} fa-2x text-primary mb-2"></i>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-primary add-to-order" data-product-id="{{ $product->id }}">
-                                        <i class="fas fa-plus"></i>
+                                    <h6 class="card-title mb-1">{{ $product->name }}</h6>
+                                    <p class="card-text text-muted small mb-2">{{ $product->brand }}</p>
+                                    <div class="small {{ $stockColor }}">
+                                        <div>Stock:</div>
+                                        <div>{{ $product->current_stock_kilo }}kg | {{ $product->current_stock_sack }}s | {{ $product->current_stock_piece }}pc</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary mt-2 quick-add" data-product-id="{{ $product->id }}">
+                                        <i class="fas fa-plus me-1"></i>Quick Add
                                     </button>
                                 </div>
-                                <div class="mt-2">
-                                    <small class="text-muted">
-                                        Stock: {{ $product->current_stock_kilo }}kg, {{ $product->current_stock_sack }}s, {{ $product->current_stock_piece }}pc
-                                    </small>
-                                </div>
                             </div>
-                        @endforeach
-                    </div>
+                        </div>
+                    @endforeach
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>
@@ -113,7 +120,7 @@
 
 <!-- Order Item Template -->
 <div id="orderItemTemplate" style="display: none;">
-    <div class="order-item card mb-3">
+    <div class="order-item card mb-3" style="cursor: move;">
         <div class="card-body">
             <div class="row align-items-end">
                 <div class="col-md-4">
@@ -121,7 +128,7 @@
                     <select class="form-select product-select" name="items[INDEX][product_id]" required>
                         <option value="">Select Product</option>
                         @foreach($products as $product)
-                            <option value="{{ $product->id }}" data-price-kilo="{{ $product->price_per_kilo }}" data-price-sack="{{ $product->price_per_sack }}" data-price-piece="{{ $product->price_per_piece }}">
+                            <option value="{{ $product->id }}">
                                 {{ $product->name }} - {{ $product->brand }}
                             </option>
                         @endforeach
@@ -135,21 +142,16 @@
                         <option value="piece">Piece</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">Quantity</label>
-                    <input type="number" class="form-control quantity-input" name="items[INDEX][quantity]" min="0.01" step="0.01" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Unit Price</label>
-                    <input type="number" class="form-control price-input" name="items[INDEX][unit_price]" min="0" step="0.01" readonly>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Line Total</label>
                     <div class="input-group">
-                        <span class="input-group-text">₱</span>
-                        <input type="text" class="form-control line-total" readonly>
+                        <button type="button" class="btn btn-outline-secondary qty-minus">−</button>
+                        <input type="number" class="form-control quantity-input text-center" name="items[INDEX][quantity]" min="0.01" step="0.01" value="1" required>
+                        <button type="button" class="btn btn-outline-secondary qty-plus">+</button>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-item">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-item">
                         <i class="fas fa-trash"></i> Remove
                     </button>
                 </div>
@@ -158,66 +160,256 @@
     </div>
 </div>
 
+<!-- Undo Toast -->
+<div id="undoToast" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 1055; min-width: 250px;">
+    <div class="alert alert-warning d-flex justify-content-between align-items-center">
+        <span id="undoMsg">Item removed.</span>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-dark me-1 undo-btn">Undo</button>
+            <button type="button" class="btn-close" onclick="document.getElementById('undoToast').style.display='none';"></button>
+        </div>
+    </div>
+</div>
+
 <style>
 .product-item {
     transition: all 0.2s ease;
     cursor: pointer;
+    border: 1px solid #dee2e6;
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    padding: 1rem;
 }
 
 .product-item:hover {
     background-color: #f8f9fa;
     transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-item h6 {
+    color: #212529;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
 }
 
 .add-to-order {
-    transition: all 0.2s ease;
-}
-
-.add-to-order:hover {
-    transform: scale(1.1);
+    display: none;
 }
 
 .order-item {
-    border-left: 4px solid #007bff;
+    border-left: 4px solid #28a745;
 }
 
 .card {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     transition: box-shadow 0.2s ease;
+    border-radius: 0.75rem;
 }
 
 .card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+#productsList {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.form-select, .form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.product-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.product-grid-item {
+    transition: all 0.2s ease;
+}
+
+.product-grid-item:hover .product-card {
+    border-color: #007bff !important;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #f8f9fa !important;
+}
+
+.qty-btn {
+    border-radius: 0.25rem;
+}
+
+.order-item {
+    transition: all 0.2s ease;
+}
+
+.order-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 </style>
 
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 let itemIndex = 0;
+let removedHtml = null;
+let removedProductName = '';
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Add item button
-    document.getElementById('addItemBtn').addEventListener('click', addOrderItem);
+    // Initialize total
+    updateTotal();
 
-    // Add product to order buttons
-    document.querySelectorAll('.add-to-order').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const productId = this.dataset.productId;
-            addOrderItem(productId);
+    // Initialize Sortable for drag & drop
+    const orderItems = document.getElementById('orderItems');
+    new Sortable(orderItems, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: function() {
+            renumberItems();
+        }
+    });
+
+    // Modal product search
+    document.getElementById('modalProductSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.product-grid-item').forEach(item => {
+            const productName = item.dataset.productName.toLowerCase();
+            const productBrand = item.dataset.productBrand.toLowerCase();
+            const matchesName = productName.includes(searchTerm);
+            const matchesBrand = productBrand.includes(searchTerm);
+            item.style.display = (matchesName || matchesBrand) ? 'block' : 'none';
         });
     });
 
-    // Product search
-    document.getElementById('productSearch').addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        document.querySelectorAll('.product-item').forEach(item => {
-            const productName = item.dataset.productName.toLowerCase();
-            item.style.display = productName.includes(searchTerm) ? 'block' : 'none';
+    // Add click handlers to product grid items (for whole card click)
+    document.querySelectorAll('.product-grid-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            if (!e.target.closest('.quick-add')) {
+                const productId = this.dataset.productId;
+                if (productId) {
+                    addOrderItem(productId);
+                    // Highlight feedback, but keep modal open
+                    this.querySelector('.product-card').style.backgroundColor = '#d4edda';
+                    setTimeout(() => {
+                        this.querySelector('.product-card').style.backgroundColor = '';
+                    }, 1000);
+                }
+            }
+        });
+    });
+
+    // Add click handlers to quick-add buttons
+    document.querySelectorAll('.quick-add').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const productId = this.dataset.productId;
+            addOrderItem(productId);
+            // Highlight
+            this.closest('.product-card').style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                this.closest('.product-card').style.backgroundColor = '';
+            }, 1000);
+        });
+    });
+
+    // Undo toast handler
+    const undoBtn = document.querySelector('#undoToast .undo-btn');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', function() {
+            if (removedHtml) {
+                const temp = document.createElement('div');
+                temp.innerHTML = removedHtml;
+                const item = temp.firstElementChild;
+                document.getElementById('orderItems').appendChild(item);
+                addListeners(item);
+                renumberItems();
+                updateTotal();
+            }
+            document.getElementById('undoToast').style.display = 'none';
+            clearTimeout(window.undoTimeout);
+        });
+    }
+
+    // Clear search when modal is shown
+    document.getElementById('productModal').addEventListener('show.bs.modal', function() {
+        document.getElementById('modalProductSearch').value = '';
+        document.querySelectorAll('.product-grid-item').forEach(item => {
+            item.style.display = 'block';
         });
     });
 });
+
+function addListeners(item) {
+    const removeBtn = item.querySelector('.remove-item');
+    removeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (confirm('Are you sure you want to remove this item?')) {
+            const itemToRemove = this.closest('.order-item');
+            const productSelect = itemToRemove.querySelector('.product-select');
+            removedProductName = productSelect.options[productSelect.selectedIndex]?.text || 'Unknown Product';
+            removedHtml = itemToRemove.outerHTML;
+
+            // Show undo toast
+            document.getElementById('undoMsg').textContent = `Removed: ${removedProductName}`;
+            const toast = document.getElementById('undoToast');
+            toast.style.display = 'block';
+            clearTimeout(window.undoTimeout);
+            window.undoTimeout = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 5000);
+
+            // Remove item
+            itemToRemove.remove();
+            updateTotal();
+            renumberItems();
+        }
+    });
+
+    // Quantity steppers
+    const plusBtn = item.querySelector('.qty-plus');
+    plusBtn.addEventListener('click', function() {
+        const input = this.parentElement.querySelector('.quantity-input');
+        let val = parseFloat(input.value) || 0;
+        input.value = val + 1;
+    });
+
+    const minusBtn = item.querySelector('.qty-minus');
+    minusBtn.addEventListener('click', function() {
+        const input = this.parentElement.querySelector('.quantity-input');
+        let val = parseFloat(input.value) || 0;
+        if (val > 0.01) {
+            input.value = Math.max(0.01, val - 1);
+        }
+    });
+}
 
 function addOrderItem(productId = null) {
     const template = document.getElementById('orderItemTemplate');
@@ -231,103 +423,42 @@ function addOrderItem(productId = null) {
     if (productId) {
         const productSelect = newItem.querySelector('.product-select');
         productSelect.value = productId;
-        updateUnitPrice(newItem);
+        // Set default unit to 'kilo'
+        const unitSelect = newItem.querySelector('.unit-select');
+        unitSelect.value = 'kilo';
+        // Set default quantity to 1
+        const quantityInput = newItem.querySelector('.quantity-input');
+        quantityInput.value = 1;
     }
 
     // Add event listeners
-    const productSelect = newItem.querySelector('.product-select');
-    const unitSelect = newItem.querySelector('.unit-select');
-    const quantityInput = newItem.querySelector('.quantity-input');
-    const removeBtn = newItem.querySelector('.remove-item');
-
-    productSelect.addEventListener('change', function() {
-        updateUnitPrice(newItem);
-    });
-
-    unitSelect.addEventListener('change', function() {
-        updateUnitPrice(newItem);
-    });
-
-    quantityInput.addEventListener('input', function() {
-        calculateLineTotal(newItem);
-        updateOrderSummary();
-    });
-
-    removeBtn.addEventListener('click', function() {
-        newItem.remove();
-        updateOrderSummary();
-    });
+    addListeners(newItem);
 
     // Append to order items
     orderItems.appendChild(newItem);
     itemIndex++;
-
-    updateOrderSummary();
+    updateTotal();
+    renumberItems();
 }
 
-function updateUnitPrice(itemElement) {
-    const productSelect = itemElement.querySelector('.product-select');
-    const unitSelect = itemElement.querySelector('.unit-select');
-    const priceInput = itemElement.querySelector('.price-input');
-
-    const selectedOption = productSelect.options[productSelect.selectedIndex];
-    if (!selectedOption.value) return;
-
-    let price = 0;
-    switch (unitSelect.value) {
-        case 'kilo':
-            price = selectedOption.dataset.priceKilo;
-            break;
-        case 'sack':
-            price = selectedOption.dataset.priceSack;
-            break;
-        case 'piece':
-            price = selectedOption.dataset.pricePiece;
-            break;
-    }
-
-    priceInput.value = price;
-    calculateLineTotal(itemElement);
-    updateOrderSummary();
+function updateTotal() {
+    const count = document.querySelectorAll('.order-item').length;
+    document.getElementById('itemCount').textContent = count;
+    document.getElementById('totalItemsContainer').style.display = count > 0 ? 'block' : 'none';
 }
 
-function calculateLineTotal(itemElement) {
-    const quantityInput = itemElement.querySelector('.quantity-input');
-    const priceInput = itemElement.querySelector('.price-input');
-    const lineTotalInput = itemElement.querySelector('.line-total');
-
-    const quantity = parseFloat(quantityInput.value) || 0;
-    const price = parseFloat(priceInput.value) || 0;
-    const lineTotal = quantity * price;
-
-    lineTotalInput.value = lineTotal.toFixed(2);
-}
-
-function updateOrderSummary() {
-    let totalItems = 0;
-    let totalQuantity = 0;
-    let totalAmount = 0;
-
-    document.querySelectorAll('.order-item').forEach(item => {
-        totalItems++;
-        const quantity = parseFloat(item.querySelector('.quantity-input').value) || 0;
-        const lineTotal = parseFloat(item.querySelector('.line-total').value) || 0;
-
-        totalQuantity += quantity;
-        totalAmount += lineTotal;
+function renumberItems() {
+    const items = document.querySelectorAll('.order-item');
+    items.forEach((item, index) => {
+        const inputs = item.querySelectorAll('input, select');
+        inputs.forEach(el => {
+            let name = el.getAttribute('name');
+            if (name) {
+                name = name.replace(/\[\d+\]/, '[' + index + ']');
+                el.setAttribute('name', name);
+            }
+        });
     });
-
-    document.getElementById('totalItems').textContent = totalItems;
-    document.getElementById('totalQuantity').textContent = totalQuantity.toFixed(2);
-    document.getElementById('totalAmount').textContent = '₱' + totalAmount.toFixed(2);
-}
-
-function resetForm() {
-    if (confirm('Are you sure you want to reset the form? All data will be lost.')) {
-        document.getElementById('orderItems').innerHTML = '';
-        itemIndex = 0;
-        updateOrderSummary();
-    }
 }
 </script>
 @endpush

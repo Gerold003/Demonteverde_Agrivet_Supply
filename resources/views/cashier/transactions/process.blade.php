@@ -29,7 +29,7 @@
                             <input class="form-control qty" data-index="{{ $index }}" type="number" name="items[{{ $index }}][quantity]" value="{{ $item->quantity }}" min="0.01" step="0.01">
                         </td>
                         <td>
-                            <input class="form-control price" data-index="{{ $index }}" type="number" name="items[{{ $index }}][unit_price]" value="{{ $item->unit_price }}" min="0" step="0.01">
+                            <input class="form-control price" data-index="{{ $index }}" type="number" name="items[{{ $index }}][unit_price]" value="{{ $item->product->getPriceForUnit($item->unit) }}" min="0" step="0.01" readonly>
                         </td>
                         <td>
                             <input class="form-control line-total" data-index="{{ $index }}" type="text" readonly value="₱{{ number_format($item->quantity * $item->unit_price, 2) }}">

@@ -1,0 +1,4 @@
+- [ ] Modify Helper/OrderController index method to filter orders by status query parameter
+- [ ] Update helper/orders/index.blade.php to use server-side filtering with form submission
+- [ ] Remove client-side filtering JavaScript
+- [ ] Test the status filter functionality

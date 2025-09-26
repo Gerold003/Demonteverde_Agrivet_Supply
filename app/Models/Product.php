@@ -44,9 +44,27 @@ class Product extends Model
         return $this->hasMany(StockOut::class);
     }
 
-    // Check if product is below critical level
+    // Check if product is below critical level for any unit
     public function isLowStock()
     {
-        return $this->current_stock_sack <= $this->critical_level_sack;
+        return ($this->current_stock_kilo <= $this->critical_level_kilo)
+            || ($this->current_stock_sack <= $this->critical_level_sack)
+            || ($this->current_stock_piece <= $this->critical_level_piece);
+    }
+
+    // Deduct stock for a specific unit
+    public function deductStock($quantity, $unit)
+    {
+        $stockField = 'current_stock_' . $unit;
+        if (isset($this->$stockField)) {
+            $this->decrement($stockField, $quantity);
+        }
+    }
+
+    // Get price for a specific unit
+    public function getPriceForUnit($unit)
+    {
+        $priceField = 'price_per_' . $unit;
+        return $this->$priceField ?? 0;
     }
 }

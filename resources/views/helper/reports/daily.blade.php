@@ -79,10 +79,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h5 class="card-title mb-0" id="totalAmount">₱0.00</h5>
-                            <small>Total Value</small>
+                            <h5 class="card-title mb-0" id="totalQuantity">0</h5>
+                            <small>Total Quantity</small>
                         </div>
-                        <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                        <i class="fas fa-weight fa-2x opacity-75"></i>
                     </div>
                 </div>
             </div>
@@ -92,8 +92,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h5 class="card-title mb-0" id="avgOrderValue">₱0.00</h5>
-                            <small>Avg Order Value</small>
+                            <h5 class="card-title mb-0" id="avgItemsPerOrder">0</h5>
+                            <small>Avg Items/Order</small>
                         </div>
                         <i class="fas fa-chart-line fa-2x opacity-75"></i>
                     </div>
@@ -126,7 +126,6 @@
                                         <th>Order ID</th>
                                         <th>Status</th>
                                         <th>Items</th>
-                                        <th>Total Amount</th>
                                         <th>Prepared At</th>
                                         <th>Actions</th>
                                     </tr>
@@ -348,8 +347,8 @@ function generateMockReportData(date) {
 function updateReportSummary(data) {
     document.getElementById('totalOrders').textContent = data.totalOrders;
     document.getElementById('totalItems').textContent = data.totalItems;
-    document.getElementById('totalAmount').textContent = '₱' + data.totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2});
-    document.getElementById('avgOrderValue').textContent = '₱' + (data.totalAmount / data.totalOrders).toLocaleString('en-US', {minimumFractionDigits: 2});
+    document.getElementById('totalQuantity').textContent = data.totalItems; // Using totalItems as quantity for now
+    document.getElementById('avgItemsPerOrder').textContent = (data.totalItems / data.totalOrders).toFixed(1);
 }
 
 function updateOrdersList(data) {
@@ -367,7 +366,6 @@ function updateOrdersList(data) {
             <td><strong>#${order.id}</strong></td>
             <td><span class="badge bg-${order.status === 'completed' ? 'success' : 'info'}">${order.status.replace('_', ' ')}</span></td>
             <td>${order.items} items</td>
-            <td>₱${order.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
             <td>${new Date(order.preparedAt).toLocaleString()}</td>
             <td>
                 <a href="/helper/orders/${order.id}" class="btn btn-sm btn-outline-primary">
@@ -387,7 +385,7 @@ function updateOrdersList(data) {
                         <h6 class="card-title mb-0">Order #${order.id}</h6>
                         <span class="badge bg-${order.status === 'completed' ? 'success' : 'info'}">${order.status.replace('_', ' ')}</span>
                     </div>
-                    <p class="card-text small text-muted mb-2">${order.items} items • ₱${order.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                    <p class="card-text small text-muted mb-2">${order.items} items</p>
                     <small class="text-muted">${new Date(order.preparedAt).toLocaleString()}</small>
                 </div>
             </div>

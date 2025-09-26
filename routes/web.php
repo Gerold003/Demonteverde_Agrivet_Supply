@@ -58,7 +58,7 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->group(function () 
     Route::put('/orders/{order}', [OrderController::class, 'update'])->name('helper.orders.update');
     Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('helper.orders.status');
     Route::post('/orders/bulk-status', [OrderController::class, 'bulkUpdateStatus'])->name('helper.orders.bulk-status');
-
+    Route::post('/orders/{order}/send-to-cashier', [OrderController::class, 'sendToCashier'])->name('helper.orders.send-to-cashier');
     // Reports
     Route::get('/reports/daily', [OrderController::class, 'dailyReport'])->name('helper.reports.daily');
 

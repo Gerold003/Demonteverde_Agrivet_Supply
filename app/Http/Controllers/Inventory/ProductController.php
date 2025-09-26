@@ -13,12 +13,12 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::orderBy('name')->get();
-        
+
         $criticalProducts = Product::where('current_stock_sack', '<=', 2)->get();
-        
+
         return view('inventory.products.index', compact('products', 'criticalProducts'));
     }
-    
+
     public function show($id)
     {
         $product = Product::with(['stockIns', 'stockOuts'])->findOrFail($id);
@@ -33,7 +33,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'brand' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -48,7 +48,18 @@ class ProductController extends Controller
             'critical_level_piece' => 'nullable|numeric|min:0',
         ]);
 
-        Product::create($request->all());
+        // Set default values for empty fields
+        $validated['price_per_kilo'] = $validated['price_per_kilo'] ?: 0;
+        $validated['price_per_sack'] = $validated['price_per_sack'] ?: 0;
+        $validated['price_per_piece'] = $validated['price_per_piece'] ?: 0;
+        $validated['current_stock_kilo'] = $validated['current_stock_kilo'] ?: 0;
+        $validated['current_stock_sack'] = $validated['current_stock_sack'] ?: 0;
+        $validated['current_stock_piece'] = $validated['current_stock_piece'] ?: 0;
+        $validated['critical_level_kilo'] = $validated['critical_level_kilo'] ?: 0;
+        $validated['critical_level_sack'] = $validated['critical_level_sack'] ?: 0;
+        $validated['critical_level_piece'] = $validated['critical_level_piece'] ?: 0;
+
+        Product::create($validated);
 
         return redirect()->route('inventory.products.index')
             ->with('success', 'Product created successfully.');
@@ -63,7 +74,7 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'brand' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -78,8 +89,19 @@ class ProductController extends Controller
             'critical_level_piece' => 'nullable|numeric|min:0',
         ]);
 
+        // Set default values for empty fields
+        $validated['price_per_kilo'] = $validated['price_per_kilo'] ?: 0;
+        $validated['price_per_sack'] = $validated['price_per_sack'] ?: 0;
+        $validated['price_per_piece'] = $validated['price_per_piece'] ?: 0;
+        $validated['current_stock_kilo'] = $validated['current_stock_kilo'] ?: 0;
+        $validated['current_stock_sack'] = $validated['current_stock_sack'] ?: 0;
+        $validated['current_stock_piece'] = $validated['current_stock_piece'] ?: 0;
+        $validated['critical_level_kilo'] = $validated['critical_level_kilo'] ?: 0;
+        $validated['critical_level_sack'] = $validated['critical_level_sack'] ?: 0;
+        $validated['critical_level_piece'] = $validated['critical_level_piece'] ?: 0;
+
         $product = Product::findOrFail($id);
-        $product->update($request->all());
+        $product->update($validated);
 
         return redirect()->route('inventory.products.index')
             ->with('success', 'Product updated successfully.');

@@ -35,9 +35,22 @@ class OrderController extends Controller
         $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit' => 'required|in:kilo,sack,piece',
         ]);
+
+        // Validate stock availability
+        foreach ($request->items as $item) {
+            $product = Product::find($item['product_id']);
+
+            $availableStock = $this->getAvailableStock($product, $item['unit']);
+
+            if ($item['quantity'] > $availableStock) {
+                return back()->withErrors([
+                    'items' => "Insufficient stock for {$product->name}. Available: {$availableStock} {$item['unit']}(s), Requested: {$item['quantity']} {$item['unit']}(s)"
+                ])->withInput();
+            }
+        }
 
         // Create order
         $order = Order::create([
@@ -54,7 +67,7 @@ class OrderController extends Controller
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'],
-                'unit_price' => $this->getUnitPrice($product, $item['unit']),
+                'unit_price' => 0, // Helper cannot see prices
             ]);
         }
 
@@ -138,7 +151,7 @@ class OrderController extends Controller
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'],
-                'unit_price' => $this->getUnitPrice($product, $item['unit']),
+                'unit_price' => 0, // Helper cannot see prices
             ]);
         }
 
@@ -198,6 +211,30 @@ class OrderController extends Controller
         return view('helper.products.availability', compact('products'));
     }
 
+
+
+    public function sendToCashier(Request $request, $id)
+    {
+        $request->validate([
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        $order = Order::where('helper_id', auth()->id())->findOrFail($id);
+
+        if ($order->status !== 'prepared') {
+            return redirect()->back()->with('error', 'Only prepared orders can be sent to cashier.');
+        }
+
+        $order->update([
+            'status' => 'sent_to_cashier',
+            'notes' => $request->notes,
+            'updated_at' => now()
+        ]);
+
+        return redirect()->route('helper.orders.index')
+            ->with('success', 'Order sent to cashier successfully.');
+    }
+
     private function getUnitPrice($product, $unit)
     {
         switch ($unit) {
@@ -207,6 +244,20 @@ class OrderController extends Controller
                 return $product->price_per_sack;
             case 'piece':
                 return $product->price_per_piece;
+            default:
+                return 0;
+        }
+    }
+
+    private function getAvailableStock($product, $unit)
+    {
+        switch ($unit) {
+            case 'kilo':
+                return $product->current_stock_kilo ?? 0;
+            case 'sack':
+                return $product->current_stock_sack ?? 0;
+            case 'piece':
+                return $product->current_stock_piece ?? 0;
             default:
                 return 0;
         }

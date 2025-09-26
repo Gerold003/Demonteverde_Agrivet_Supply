@@ -28,4 +28,14 @@ class Order extends Model
     {
         return $this->hasOne(Transaction::class);
     }
+
+    public function scopeSentToCashier($query)
+    {
+        return $query->where('status', 'sent_to_cashier');
+    }
+
+    public function scopePrepared($query)
+    {
+        return $query->where('status', 'prepared');
+    }
 }

@@ -25,7 +25,7 @@
     @endif
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Order Items</h5>
@@ -47,9 +47,6 @@
                                                         <option value="">Select Product</option>
                                                         @foreach($products as $product)
                                                             <option value="{{ $product->id }}"
-                                                                data-price-kilo="{{ $product->price_per_kilo }}"
-                                                                data-price-sack="{{ $product->price_per_sack }}"
-                                                                data-price-piece="{{ $product->price_per_piece }}"
                                                                 {{ $item->product_id == $product->id ? 'selected' : '' }}>
                                                                 {{ $product->name }} - {{ $product->brand }}
                                                             </option>
@@ -64,28 +61,15 @@
                                                         <option value="piece" {{ $item->unit === 'piece' ? 'selected' : '' }}>Piece</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-md-2">
+                                                <div class="col-md-3">
                                                     <label class="form-label">Quantity</label>
                                                     <input type="number" class="form-control quantity-input"
                                                            name="items[{{ $index }}][quantity]"
                                                            value="{{ $item->quantity }}"
                                                            min="0.01" step="0.01" required>
                                                 </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label">Unit Price</label>
-                                                    <input type="number" class="form-control price-input"
-                                                           name="items[{{ $index }}][unit_price]"
-                                                           value="{{ $item->unit_price }}"
-                                                           min="0" step="0.01" readonly>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label">Line Total</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">₱</span>
-                                                        <input type="text" class="form-control line-total"
-                                                               value="{{ number_format($item->quantity * $item->unit_price, 2) }}" readonly>
-                                                    </div>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-item">
+                                                <div class="col-md-3">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-item">
                                                         <i class="fas fa-trash"></i> Remove
                                                     </button>
                                                 </div>
@@ -95,36 +79,9 @@
                                 @endforeach
                             </div>
 
-                            <button type="button" id="addItemBtn" class="btn btn-outline-primary">
+                            <button type="button" id="addItemBtn" class="btn btn-outline-primary mb-3" data-bs-toggle="modal" data-bs-target="#productModal">
                                 <i class="fas fa-plus me-2"></i>Add Product
                             </button>
-
-                            <div class="mt-4">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="card bg-light">
-                                            <div class="card-body">
-                                                <h5 class="card-title">Order Summary</h5>
-                                                <div class="d-flex justify-content-between mb-2">
-                                                    <span>Total Items:</span>
-                                                    <span id="totalItems">{{ $order->items->count() }}</span>
-                                                </div>
-                                                <div class="d-flex justify-content-between mb-2">
-                                                    <span>Total Quantity:</span>
-                                                    <span id="totalQuantity">{{ $order->items->sum('quantity') }}</span>
-                                                </div>
-                                                <hr>
-                                                <div class="d-flex justify-content-between">
-                                                    <strong>Total Amount:</strong>
-                                                    <strong id="totalAmount">₱{{ number_format($order->items->sum(function($item) {
-                                                        return $item->quantity * $item->unit_price;
-                                                    }), 2) }}</strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
                             <div class="mt-4">
                                 <button type="submit" class="btn btn-success btn-lg">
@@ -148,46 +105,46 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Available Products</h5>
+<!-- Product Selection Modal -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel">
+                    <i class="fas fa-search me-2"></i>Select Product
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="modalProductSearch" class="form-control" placeholder="Search products by name or brand..." autofocus>
                 </div>
-                <div class="card-body">
-                    <div class="input-group mb-3">
-                        <input type="text" id="productSearch" class="form-control" placeholder="Search products...">
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
 
-                    <div id="productsList">
-                        @foreach($products as $product)
-                            <div class="product-item mb-2 p-2 border rounded" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1">{{ $product->name }}</h6>
-                                        <small class="text-muted">{{ $product->brand }}</small>
-                                        <div class="mt-1">
-                                            <small class="badge bg-success me-1">Kilo: ₱{{ number_format($product->price_per_kilo, 2) }}</small>
-                                            <small class="badge bg-primary me-1">Sack: ₱{{ number_format($product->price_per_sack, 2) }}</small>
-                                            <small class="badge bg-warning">Piece: ₱{{ number_format($product->price_per_piece, 2) }}</small>
-                                        </div>
+                <div id="modalProductsGrid" class="row g-3">
+                    @foreach($products as $product)
+                        <div class="col-md-6 col-lg-4 product-grid-item" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}" data-product-brand="{{ $product->brand }}">
+                            <div class="card h-100 product-card border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-2">
+                                        <i class="fas fa-box fa-2x text-primary mb-2"></i>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-primary add-to-order" data-product-id="{{ $product->id }}">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                                <div class="mt-2">
-                                    <small class="text-muted">
-                                        Stock: {{ $product->current_stock_kilo }}kg, {{ $product->current_stock_sack }}s, {{ $product->current_stock_piece }}pc
-                                    </small>
+                                    <h6 class="card-title mb-1">{{ $product->name }}</h6>
+                                    <p class="card-text text-muted small mb-2">{{ $product->brand }}</p>
+                                    <div class="small text-muted">
+                                        <div>Stock:</div>
+                                        <div>{{ $product->current_stock_kilo }}kg | {{ $product->current_stock_sack }}s | {{ $product->current_stock_piece }}pc</div>
+                                    </div>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
+                        </div>
+                    @endforeach
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>
@@ -203,7 +160,7 @@
                     <select class="form-select product-select" name="items[INDEX][product_id]" required>
                         <option value="">Select Product</option>
                         @foreach($products as $product)
-                            <option value="{{ $product->id }}" data-price-kilo="{{ $product->price_per_kilo }}" data-price-sack="{{ $product->price_per_sack }}" data-price-piece="{{ $product->price_per_piece }}">
+                            <option value="{{ $product->id }}">
                                 {{ $product->name }} - {{ $product->brand }}
                             </option>
                         @endforeach
@@ -217,21 +174,12 @@
                         <option value="piece">Piece</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">Quantity</label>
                     <input type="number" class="form-control quantity-input" name="items[INDEX][quantity]" min="0.01" step="0.01" required>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">Unit Price</label>
-                    <input type="number" class="form-control price-input" name="items[INDEX][unit_price]" min="0" step="0.01" readonly>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Line Total</label>
-                    <div class="input-group">
-                        <span class="input-group-text">₱</span>
-                        <input type="text" class="form-control line-total" readonly>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-item">
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-item">
                         <i class="fas fa-trash"></i> Remove
                     </button>
                 </div>
@@ -241,39 +189,60 @@
 </div>
 
 <style>
-.product-item {
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.product-item:hover {
-    background-color: #f8f9fa;
-    transform: translateY(-1px);
-}
-
-.add-to-order {
-    transition: all 0.2s ease;
-}
-
-.add-to-order:hover {
-    transform: scale(1.1);
-}
-
 .order-item {
-    border-left: 4px solid #007bff;
+    border-left: 4px solid #28a745;
 }
 
 .card {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     transition: box-shadow 0.2s ease;
+    border-radius: 0.75rem;
 }
 
 .card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.form-select, .form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
 }
 
 .alert {
     border-radius: 12px;
+}
+
+.product-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.product-grid-item {
+    transition: all 0.2s ease;
+}
+
+.product-grid-item:hover .product-card {
+    border-color: #007bff !important;
 }
 </style>
 
@@ -284,33 +253,73 @@
 let itemIndex = {{ $order->items->count() }};
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Add item button
-    document.getElementById('addItemBtn').addEventListener('click', addOrderItem);
+    // Modal product search
+    const modalSearchInput = document.getElementById('modalProductSearch');
+    if (modalSearchInput) {
+        modalSearchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            document.querySelectorAll('.product-grid-item').forEach(item => {
+                const productName = item.dataset.productName.toLowerCase();
+                const productBrand = item.dataset.productBrand.toLowerCase();
+                const matchesName = productName.includes(searchTerm);
+                const matchesBrand = productBrand.includes(searchTerm);
+                item.style.display = (matchesName || matchesBrand) ? 'block' : 'none';
+            });
+        });
+    }
 
-    // Add product to order buttons
-    document.querySelectorAll('.add-to-order').forEach(btn => {
-        btn.addEventListener('click', function() {
+    // Add click handlers to product grid items
+    document.querySelectorAll('.product-grid-item').forEach(item => {
+        item.addEventListener('click', function() {
             const productId = this.dataset.productId;
-            addOrderItem(productId);
+            if (productId) {
+                addOrderItem(productId);
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('productModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                // Optional: highlight feedback
+                const productCard = this.querySelector('.product-card');
+                if (productCard) {
+                    productCard.style.backgroundColor = '#d4edda';
+                    setTimeout(() => {
+                        productCard.style.backgroundColor = '';
+                    }, 1000);
+                }
+            }
         });
     });
 
-    // Product search
-    document.getElementById('productSearch').addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        document.querySelectorAll('.product-item').forEach(item => {
-            const productName = item.dataset.productName.toLowerCase();
-            item.style.display = productName.includes(searchTerm) ? 'block' : 'none';
+    // Add remove listeners for existing items
+    document.querySelectorAll('#editOrderItems .remove-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to remove this item?')) {
+                this.closest('.order-item').remove();
+            }
         });
     });
 
-    // Initialize calculations for existing items
-    updateOrderSummary();
+    // Clear search when modal is shown
+    const productModal = document.getElementById('productModal');
+    if (productModal) {
+        productModal.addEventListener('show.bs.modal', function() {
+            const searchInput = document.getElementById('modalProductSearch');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            document.querySelectorAll('.product-grid-item').forEach(item => {
+                item.style.display = 'block';
+            });
+        });
+    }
 });
 
 function addOrderItem(productId = null) {
     const template = document.getElementById('orderItemTemplate');
     const orderItems = document.getElementById('editOrderItems');
+
+    if (!template || !orderItems) return;
 
     // Clone template
     const newItem = template.firstElementChild.cloneNode(true);
@@ -319,98 +328,34 @@ function addOrderItem(productId = null) {
     // Set product if specified
     if (productId) {
         const productSelect = newItem.querySelector('.product-select');
-        productSelect.value = productId;
-        updateUnitPrice(newItem);
+        if (productSelect) {
+            productSelect.value = productId;
+        }
+        // Set default unit to 'kilo'
+        const unitSelect = newItem.querySelector('.unit-select');
+        if (unitSelect) {
+            unitSelect.value = 'kilo';
+        }
+        // Set default quantity to 1
+        const quantityInput = newItem.querySelector('.quantity-input');
+        if (quantityInput) {
+            quantityInput.value = 1;
+        }
     }
 
     // Add event listeners
-    const productSelect = newItem.querySelector('.product-select');
-    const unitSelect = newItem.querySelector('.unit-select');
-    const quantityInput = newItem.querySelector('.quantity-input');
     const removeBtn = newItem.querySelector('.remove-item');
-
-    productSelect.addEventListener('change', function() {
-        updateUnitPrice(newItem);
-    });
-
-    unitSelect.addEventListener('change', function() {
-        updateUnitPrice(newItem);
-    });
-
-    quantityInput.addEventListener('input', function() {
-        calculateLineTotal(newItem);
-        updateOrderSummary();
-    });
-
-    removeBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to remove this item?')) {
-            newItem.remove();
-            updateOrderSummary();
-        }
-    });
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to remove this item?')) {
+                newItem.remove();
+            }
+        });
+    }
 
     // Append to order items
     orderItems.appendChild(newItem);
     itemIndex++;
-
-    updateOrderSummary();
-}
-
-function updateUnitPrice(itemElement) {
-    const productSelect = itemElement.querySelector('.product-select');
-    const unitSelect = itemElement.querySelector('.unit-select');
-    const priceInput = itemElement.querySelector('.price-input');
-
-    const selectedOption = productSelect.options[productSelect.selectedIndex];
-    if (!selectedOption.value) return;
-
-    let price = 0;
-    switch (unitSelect.value) {
-        case 'kilo':
-            price = selectedOption.dataset.priceKilo;
-            break;
-        case 'sack':
-            price = selectedOption.dataset.priceSack;
-            break;
-        case 'piece':
-            price = selectedOption.dataset.pricePiece;
-            break;
-    }
-
-    priceInput.value = price;
-    calculateLineTotal(itemElement);
-    updateOrderSummary();
-}
-
-function calculateLineTotal(itemElement) {
-    const quantityInput = itemElement.querySelector('.quantity-input');
-    const priceInput = itemElement.querySelector('.price-input');
-    const lineTotalInput = itemElement.querySelector('.line-total');
-
-    const quantity = parseFloat(quantityInput.value) || 0;
-    const price = parseFloat(priceInput.value) || 0;
-    const lineTotal = quantity * price;
-
-    lineTotalInput.value = lineTotal.toFixed(2);
-}
-
-function updateOrderSummary() {
-    let totalItems = 0;
-    let totalQuantity = 0;
-    let totalAmount = 0;
-
-    document.querySelectorAll('.order-item').forEach(item => {
-        totalItems++;
-        const quantity = parseFloat(item.querySelector('.quantity-input').value) || 0;
-        const lineTotal = parseFloat(item.querySelector('.line-total').value) || 0;
-
-        totalQuantity += quantity;
-        totalAmount += lineTotal;
-    });
-
-    document.getElementById('totalItems').textContent = totalItems;
-    document.getElementById('totalQuantity').textContent = totalQuantity.toFixed(2);
-    document.getElementById('totalAmount').textContent = '₱' + totalAmount.toFixed(2);
 }
 </script>
 @endpush

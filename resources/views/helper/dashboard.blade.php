@@ -85,14 +85,13 @@
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
-                                    <tr>
-                                        <th>Order ID</th>
-                                        <th>Status</th>
-                                        <th>Items</th>
-                                        <th>Total Amount</th>
-                                        <th>Created</th>
-                                        <th>Actions</th>
-                                    </tr>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Status</th>
+                                    <th>Items</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($recentOrders as $order)
@@ -108,11 +107,6 @@
                                                 </span>
                                             </td>
                                             <td>{{ $order->items->count() }} items</td>
-                                            <td>
-                                                <strong>₱{{ number_format($order->items->sum(function($item) {
-                                                    return $item->quantity * $item->unit_price;
-                                                }), 2) }}</strong>
-                                            </td>
                                             <td>
                                                 <small>{{ $order->created_at->format('M j, h:i A') }}</small>
                                             </td>
@@ -207,40 +201,40 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-1">
                             <span>Prepared</span>
-                            <span class="badge bg-warning">0</span>
+                            <span class="badge bg-warning">{{ $preparedCount }}</span>
                         </div>
                         <div class="progress mb-2" style="height: 6px;">
-                            <div class="progress-bar bg-warning" role="progressbar" style="width: 0%"></div>
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $totalOrders > 0 ? ($preparedCount / $totalOrders * 100) : 0 }}%"></div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-1">
                             <span>Ready for Pickup</span>
-                            <span class="badge bg-info">0</span>
+                            <span class="badge bg-info">{{ $readyCount }}</span>
                         </div>
                         <div class="progress mb-2" style="height: 6px;">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ $totalOrders > 0 ? ($readyCount / $totalOrders * 100) : 0 }}%"></div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-1">
                             <span>Completed</span>
-                            <span class="badge bg-success">0</span>
+                            <span class="badge bg-success">{{ $completedCount }}</span>
                         </div>
                         <div class="progress mb-2" style="height: 6px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $totalOrders > 0 ? ($completedCount / $totalOrders * 100) : 0 }}%"></div>
                         </div>
                     </div>
 
                     <div>
                         <div class="d-flex justify-content-between mb-1">
                             <span>Cancelled</span>
-                            <span class="badge bg-danger">0</span>
+                            <span class="badge bg-danger">{{ $cancelledCount }}</span>
                         </div>
                         <div class="progress mb-2" style="height: 6px;">
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ $totalOrders > 0 ? ($cancelledCount / $totalOrders * 100) : 0 }}%"></div>
                         </div>
                     </div>
                 </div>
